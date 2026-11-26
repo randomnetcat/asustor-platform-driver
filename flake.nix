@@ -10,7 +10,7 @@
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
       module =
-        ({ stdenv, lib, kernel, ... }:
+        ({ stdenv, lib, kernel, kernelModuleMakeFlags, ... }:
 
           stdenv.mkDerivation rec {
             name = "asustor-platform-driver-${version}-${kernel.version}";
@@ -24,11 +24,20 @@
             hardeningDisable = [ "pic" "format" ];
             nativeBuildInputs = kernel.moduleBuildDependencies;
 
+            makeFlags = kernelModuleMakeFlags;
+
             buildFlags = [
               "KERNEL_MODULES=${kernel.dev}/lib/modules/${kernel.modDirVersion}"
+              "DRIVER=asustor_it87"
             ];
+
+            installTargets = [ "modules_install" ];
+
             installFlags = [
-              "KERNEL_MODULES=${placeholder "out"}/lib/modules/${kernel.modDirVersion}"
+              "-C"
+              "${kernel.dev}/lib/modules/${kernel.modDirVersion}/build"
+              "M=$(PWD)"
+              "INSTALL_MOD_PATH=${placeholder "out"}"
             ];
 
             preConfigure = ''
